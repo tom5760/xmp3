@@ -246,8 +246,9 @@ static bool handle_message(struct xmpp_stanza *stanza, struct xep_muc *muc) {
 
     char *from;
     STRDUP_CHECK(from, xmpp_stanza_attr(stanza, XMPP_STANZA_ATTR_FROM));
-
     struct jid *from_jid = jid_new_from_str(from);
+
+#if 0
     struct room_client *room_client = NULL;
     DL_FOREACH(room->clients, room_client) {
         if (jid_cmp(room_client->client_jid, from_jid) == 0) {
@@ -256,16 +257,18 @@ static bool handle_message(struct xmpp_stanza *stanza, struct xep_muc *muc) {
     }
     jid_del(from_jid);
     check(room_client != NULL, "MUC message to unjoined room.");
+#endif
 
     /* We need the "from" field of the stanza we send to be from the nickname
      * of the user who sent it. */
     struct jid *nick_jid = jid_new_from_jid(room->jid);
-    jid_set_resource(nick_jid, room_client->nickname);
+    jid_set_resource(nick_jid, jid_local(from_jid));
     char *nick_jid_str = jid_to_str(nick_jid);
     jid_del(nick_jid);
 
     xmpp_stanza_set_attr(stanza, XMPP_STANZA_ATTR_FROM, nick_jid_str);
 
+    struct room_client *room_client;
     struct room_client *room_client_tmp;
     DL_FOREACH_SAFE(room->clients, room_client, room_client_tmp) {
         char *to_str = jid_to_str(room_client->client_jid);
